@@ -1,33 +1,38 @@
 ﻿namespace VRTK.Prefabs.Helpers.Tooltip
 {
     using UnityEngine;
+    using Malimbe.PropertySerializationAttribute;
+    using Malimbe.XmlDocumentationAttribute;
     using Zinnia.Process;
     using Zinnia.Data.Attribute;
 
     /// <summary>
     /// Sets up the Tooltip prefab based on the provided settings and implements the logic to display the tooltip.
     /// </summary>
-    public class TooltipInternalSetup : MonoBehaviour, IProcessable
+    public class TooltipConfigurator : MonoBehaviour, IProcessable
     {
         #region Facade Settings
         /// <summary>
         /// The public interface facade.
         /// </summary>
-        [Header("Facade Settings"), Tooltip("The public interface facade."), InternalSetting, SerializeField]
-        protected TooltipFacade facade;
+        [Serialized]
+        [field: Header("Facade Settings"), DocumentedByXml, Restricted]
+        public TooltipFacade Facade { get; protected set; }
         #endregion
 
         #region Reference Settings
         /// <summary>
-        /// The <see cref="LineRenderer"/> to draw a line from tooltip to target.
+        /// The <see cref="UnityEngine.LineRenderer"/> to draw a line from tooltip to target.
         /// </summary>
-        [Header("Reference Settings"), Tooltip("The LineRenderer to draw a line from tooltip to target."), InternalSetting, SerializeField]
-        protected LineRenderer lineRenderer;
+        [Serialized]
+        [field: Header("Reference Settings"), DocumentedByXml, Restricted]
+        public LineRenderer LineRenderer { get; protected set; }
         /// <summary>
         /// The <see cref="GameObject"/> use as the origin point for the line.
         /// </summary>
-        [Tooltip("The GameObject use as the origin point for the line."), InternalSetting, SerializeField]
-        protected GameObject lineOrigin;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public GameObject LineOrigin { get; protected set; }
         #endregion
 
         /// <summary>
@@ -35,12 +40,12 @@
         /// </summary>
         public virtual void Process()
         {
-            if (facade.FacingSource != null)
+            if (Facade.FacingSource != null)
             {
-                facade.transform.LookAt(facade.FacingSource.transform);
+                Facade.transform.LookAt(Facade.FacingSource.transform);
             }
 
-            SetLine(facade.LineTarget);
+            SetLine(Facade.LineTarget);
             ToggleLineVisibility();
         }
 
@@ -55,13 +60,13 @@
                 return;
             }
 
-            lineRenderer.SetPosition(0, lineOrigin.transform.position);
-            lineRenderer.SetPosition(1, target.transform.position);
+            LineRenderer.SetPosition(0, LineOrigin.transform.position);
+            LineRenderer.SetPosition(1, target.transform.position);
         }
 
         protected virtual void OnEnable()
         {
-            SetLine(facade.LineTarget);
+            SetLine(Facade.LineTarget);
             ToggleLineVisibility();
         }
 
@@ -70,7 +75,7 @@
         /// </summary>
         protected virtual void ToggleLineVisibility()
         {
-            lineRenderer.gameObject.SetActive(facade.LineTarget != null);
+            LineRenderer.gameObject.SetActive(Facade.LineTarget != null);
         }
     }
 }

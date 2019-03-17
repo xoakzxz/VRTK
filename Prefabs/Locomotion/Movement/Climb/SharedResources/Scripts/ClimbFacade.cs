@@ -3,7 +3,10 @@
     using UnityEngine;
     using UnityEngine.Events;
     using System.Collections.Generic;
-    using System.Linq;
+    using Malimbe.PropertySerializationAttribute;
+    using Malimbe.XmlDocumentationAttribute;
+    using Malimbe.MemberClearanceMethod;
+    using Malimbe.MemberChangeMethod;
     using Zinnia.Data.Attribute;
     using VRTK.Prefabs.Locomotion.BodyRepresentation;
 
@@ -16,38 +19,31 @@
         /// <summary>
         /// The body representation to control.
         /// </summary>
-        [Header("Control Settings"), Tooltip("The body representation to control."), SerializeField]
-        private BodyRepresentationFacade _bodyRepresentationFacade;
-        public BodyRepresentationFacade BodyRepresentationFacade
-        {
-            get { return _bodyRepresentationFacade; }
-            set
-            {
-                _bodyRepresentationFacade = value;
-                internalSetup.ConfigureTargetPositionProperty();
-            }
-        }
+        [Serialized, Cleared]
+        [field: Header("Control Settings"), DocumentedByXml]
+        public BodyRepresentationFacade BodyRepresentationFacade { get; set; }
         #endregion
 
         #region Events
         /// <summary>
         /// Emitted when a climb starts.
         /// </summary>
-        [Header("Events"), Tooltip("Emitted when a climb starts.")]
+        [Header("Events"), DocumentedByXml]
         public UnityEvent ClimbStarted = new UnityEvent();
         /// <summary>
         /// Emitted when the climb stops.
         /// </summary>
-        [Tooltip("Emitted when the climb stops.")]
+        [DocumentedByXml]
         public UnityEvent ClimbStopped = new UnityEvent();
         #endregion
 
-        #region Internal Settings
+        #region Reference Settings
         /// <summary>
-        /// The linked Internal Setup.
+        /// Applies velocity when releasing from climb.
         /// </summary>
-        [Header("Internal Settings"), Tooltip("The linked Internal Setup."), InternalSetting, SerializeField]
-        protected ClimbInternalSetup internalSetup;
+        [Serialized]
+        [field: Header("Reference Settings"), DocumentedByXml, Restricted]
+        public ClimbVelocityApplier VelocityApplier { get; protected set; }
         #endregion
 
         /// <summary>
@@ -66,11 +62,11 @@
         /// <summary>
         /// The objects that define the source of movement in order they should be used. The last object defines <see cref="CurrentInteractor"/>.
         /// </summary>
-        public IReadOnlyList<GameObject> Interactors => internalSetup.Interactors.Elements;
+        public IReadOnlyList<GameObject> Interactors => VelocityApplier.Interactors.NonSubscribableElements;
         /// <summary>
         /// The objects that define the optional offsets of movement in order they should be used. The last object defines <see cref="CurrentInteractable"/>.
         /// </summary>
-        public IReadOnlyList<GameObject> Interactables => internalSetup.Interactables.Elements;
+        public IReadOnlyList<GameObject> Interactables => VelocityApplier.Interactables.NonSubscribableElements;
 
         /// <summary>
         /// Adds a source of movement for the body.
@@ -83,7 +79,7 @@
                 return;
             }
 
-            internalSetup.Interactors.AddToEnd(interactor);
+            VelocityApplier.Interactors.Add(interactor);
         }
 
         /// <summary>
@@ -92,13 +88,13 @@
         /// <param name="interactor">The object used as a source of the movement.</param>
         public virtual void RemoveInteractor(GameObject interactor)
         {
-            if (!isActiveAndEnabled || !internalSetup.Interactors.Elements.Contains(interactor))
+            if (!isActiveAndEnabled || !VelocityApplier.Interactors.Contains(interactor))
             {
                 return;
             }
 
-            internalSetup.Interactors.RemoveLast(interactor);
-            internalSetup.ApplyVelocity();
+            VelocityApplier.Interactors.RemoveLastOccurrence(interactor);
+            VelocityApplier.ApplyVelocity();
         }
 
         /// <summary>
@@ -111,7 +107,7 @@
                 return;
             }
 
-            internalSetup.Interactors.Clear(false);
+            VelocityApplier.Interactors.Clear(false);
         }
 
         /// <summary>
@@ -125,7 +121,7 @@
                 return;
             }
 
-            internalSetup.Interactables.AddToEnd(interactable);
+            VelocityApplier.Interactables.Add(interactable);
         }
 
         /// <summary>
@@ -139,7 +135,7 @@
                 return;
             }
 
-            internalSetup.Interactables.RemoveLast(interactable);
+            VelocityApplier.Interactables.RemoveLastOccurrence(interactable);
         }
 
         /// <summary>
@@ -152,7 +148,7 @@
                 return;
             }
 
-            internalSetup.Interactables.Clear(false);
+            VelocityApplier.Interactables.Clear(false);
         }
 
         /// <summary>
@@ -161,7 +157,7 @@
         /// <param name="source">The tracked velocity source.</param>
         public virtual void SetVelocitySource(GameObject source)
         {
-            internalSetup.VelocityProxy.SetProxySource(source);
+            VelocityApplier.VelocityProxy.ProxySource = source;
         }
 
         /// <summary>
@@ -170,8 +166,17 @@
         /// <param name="multiplier">The multiplier to apply to tracked velocity.</param>
         public virtual void SetVelocityMultiplier(Vector3 multiplier)
         {
-            internalSetup.VelocityMultiplier.SetElement(1, multiplier);
-            internalSetup.VelocityMultiplier.CurrentIndex = 0;
+            VelocityApplier.VelocityMultiplier.Collection.SetAt(multiplier, 1);
+            VelocityApplier.VelocityMultiplier.Collection.CurrentIndex = 0;
+        }
+
+        /// <summary>
+        /// Called after <see cref="BodyRepresentationFacade"/> has been changed.
+        /// </summary>
+        [CalledAfterChangeOf(nameof(BodyRepresentationFacade))]
+        protected virtual void OnAfterBodyRepresentationFacadeChange()
+        {
+            VelocityApplier.ConfigureTargetPositionProperty();
         }
     }
 }

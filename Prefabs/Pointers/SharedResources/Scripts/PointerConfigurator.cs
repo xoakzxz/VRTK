@@ -1,6 +1,8 @@
 ﻿namespace VRTK.Prefabs.Pointers
 {
     using UnityEngine;
+    using Malimbe.XmlDocumentationAttribute;
+    using Malimbe.PropertySerializationAttribute;
     using Zinnia.Cast;
     using Zinnia.Action;
     using Zinnia.Data.Attribute;
@@ -9,48 +11,54 @@
     /// <summary>
     /// Sets up the Pointer Prefab based on the provided user settings.
     /// </summary>
-    public class PointerInternalSetup : MonoBehaviour
+    public class PointerConfigurator : MonoBehaviour
     {
         #region Facade Settings
         /// <summary>
-        /// The public interface facade.
+        /// The public facade.
         /// </summary>
-        [Header("Facade Settings"), Tooltip("The public interface facade."), InternalSetting, SerializeField]
-        protected PointerFacade facade;
+        [Serialized]
+        [field: Header("Facade Settings"), DocumentedByXml, Restricted]
+        public PointerFacade Facade { get; protected set; }
         #endregion
 
         #region Object Follow Settings
         /// <summary>
         /// The <see cref="ObjectFollower"/> component for the Pointer.
         /// </summary>
-        [Header("Object Follow Settings"), Tooltip("The ObjectFollower component for the Pointer."), InternalSetting, SerializeField]
-        protected ObjectFollower objectFollow;
+        [Serialized]
+        [field: Header("Object Follow Settings"), DocumentedByXml, Restricted]
+        public ObjectFollower ObjectFollow { get; protected set; }
         #endregion
 
         #region Cast Settings
         /// <summary>
         /// The <see cref="PointsCast"/> component for the Pointer.
         /// </summary>
-        [Header("Cast Settings"), Tooltip("The PointsCast component for the Pointer."), InternalSetting, SerializeField]
-        protected PointsCast caster;
+        [Serialized]
+        [field: Header("Cast Settings"), DocumentedByXml, Restricted]
+        public PointsCast Caster { get; protected set; }
         #endregion
 
         #region Action Settings
         /// <summary>
         /// The <see cref="BooleanAction"/> that will activate/deactivate the pointer.
         /// </summary>
-        [Header("Action Settings"), Tooltip("The BooleanAction that will activate/deactivate the pointer."), InternalSetting, SerializeField]
-        protected BooleanAction activationAction;
+        [Serialized]
+        [field: Header("Action Settings"), DocumentedByXml, Restricted]
+        public BooleanAction ActivationAction { get; protected set; }
         /// <summary>
         /// The <see cref="BooleanAction"/> that initiates the pointer selection when the action is activated.
         /// </summary>
-        [Tooltip("The BooleanAction that initiates the pointer selection when the action is activated."), InternalSetting, SerializeField]
-        protected BooleanAction selectOnActivatedAction;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public BooleanAction SelectOnActivatedAction { get; protected set; }
         /// <summary>
         /// The <see cref="BooleanAction"/> that initiates the pointer selection when the action is deactivated.
         /// </summary>
-        [Tooltip("The BooleanAction that initiates the pointer selection when the action is deactivated."), InternalSetting, SerializeField]
-        protected BooleanAction selectOnDeactivatedAction;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public BooleanAction SelectOnDeactivatedAction { get; protected set; }
         #endregion
 
         /// <summary>
@@ -58,7 +66,7 @@
         /// </summary>
         public virtual void ConfigureTargetValidity()
         {
-            caster.targetValidity = facade.TargetValidity;
+            Caster.TargetValidity = Facade.TargetValidity;
         }
 
         /// <summary>
@@ -66,10 +74,10 @@
         /// </summary>
         public virtual void ConfigureFollowSources()
         {
-            if (facade.FollowSource != null)
+            if (Facade.FollowSource != null)
             {
-                objectFollow.ClearSources();
-                objectFollow.AddSource(facade.FollowSource);
+                ObjectFollow.Sources.Clear(false);
+                ObjectFollow.Sources.Add(Facade.FollowSource);
             }
         }
 
@@ -78,12 +86,12 @@
         /// </summary>
         public virtual void ConfigureSelectionAction()
         {
-            if (facade.SelectionAction != null)
+            if (Facade.SelectionAction != null)
             {
-                selectOnActivatedAction.ClearSources();
-                selectOnActivatedAction.AddSource(facade.SelectionAction);
-                selectOnDeactivatedAction.ClearSources();
-                selectOnDeactivatedAction.AddSource(facade.SelectionAction);
+                SelectOnActivatedAction.ClearSources();
+                SelectOnActivatedAction.AddSource(Facade.SelectionAction);
+                SelectOnDeactivatedAction.ClearSources();
+                SelectOnDeactivatedAction.AddSource(Facade.SelectionAction);
             }
         }
 
@@ -92,10 +100,10 @@
         /// </summary>
         public virtual void ConfigureActivationAction()
         {
-            if (facade.ActivationAction != null)
+            if (Facade.ActivationAction != null)
             {
-                activationAction.ClearSources();
-                activationAction.AddSource(facade.ActivationAction);
+                ActivationAction.ClearSources();
+                ActivationAction.AddSource(Facade.ActivationAction);
             }
         }
 
@@ -104,15 +112,15 @@
         /// </summary>
         public virtual void ConfigureSelectionType()
         {
-            switch (facade.SelectionMethod)
+            switch (Facade.SelectionMethod)
             {
                 case PointerFacade.SelectionType.SelectOnActivate:
-                    selectOnActivatedAction.gameObject.SetActive(true);
-                    selectOnDeactivatedAction.gameObject.SetActive(false);
+                    SelectOnActivatedAction.gameObject.SetActive(true);
+                    SelectOnDeactivatedAction.gameObject.SetActive(false);
                     break;
                 case PointerFacade.SelectionType.SelectOnDeactivate:
-                    selectOnActivatedAction.gameObject.SetActive(false);
-                    selectOnDeactivatedAction.gameObject.SetActive(true);
+                    SelectOnActivatedAction.gameObject.SetActive(false);
+                    SelectOnDeactivatedAction.gameObject.SetActive(true);
                     break;
             }
         }

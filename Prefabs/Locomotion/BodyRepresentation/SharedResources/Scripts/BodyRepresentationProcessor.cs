@@ -3,6 +3,9 @@
     using UnityEngine;
     using System;
     using System.Collections.Generic;
+    using Malimbe.MemberChangeMethod;
+    using Malimbe.XmlDocumentationAttribute;
+    using Malimbe.PropertySerializationAttribute;
     using Zinnia.Process;
     using Zinnia.Data.Attribute;
     using Zinnia.Data.Collection;
@@ -13,7 +16,7 @@
     /// <summary>
     /// Sets up the BodyRepresentation prefab based on the provided user settings and implements the logic to represent a body.
     /// </summary>
-    public class BodyRepresentationInternalSetup : MonoBehaviour, IProcessable
+    public class BodyRepresentationProcessor : MonoBehaviour, IProcessable
     {
         /// <summary>
         /// The object that defines the main source of truth for movement.
@@ -21,11 +24,11 @@
         public enum MovementInterest
         {
             /// <summary>
-            /// The source of truth for movement comes from <see cref="characterController"/>.
+            /// The source of truth for movement comes from <see cref="BodyRepresentationProcessor.Character"/>.
             /// </summary>
             CharacterController,
             /// <summary>
-            /// The source of truth for movement comes from <see cref="characterController"/> until <see cref="rigidbody"/> is in the air, then <see cref="rigidbody"/> is the new source of truth.
+            /// The source of truth for movement comes from <see cref="BodyRepresentationProcessor.Character"/> until <see cref="rigidbody"/> is in the air, then <see cref="rigidbody"/> is the new source of truth.
             /// </summary>
             CharacterControllerUntilAirborne,
             /// <summary>
@@ -33,7 +36,7 @@
             /// </summary>
             Rigidbody,
             /// <summary>
-            /// The source of truth for movement comes from <see cref="rigidbody"/> until <see cref="characterController"/> hits the ground, then <see cref="characterController"/> is the new source of truth.
+            /// The source of truth for movement comes from <see cref="rigidbody"/> until <see cref="BodyRepresentationProcessor.Character"/> hits the ground, then <see cref="BodyRepresentationProcessor.Character"/> is the new source of truth.
             /// </summary>
             RigidbodyUntilGrounded
         }
@@ -42,75 +45,49 @@
         /// <summary>
         /// The public interface facade.
         /// </summary>
-        [Header("Facade Settings"), Tooltip("The public interface facade."), InternalSetting, SerializeField]
-        protected BodyRepresentationFacade facade;
+        [Serialized]
+        [field: Header("Facade Settings"), DocumentedByXml, Restricted]
+        public BodyRepresentationFacade Facade { get; protected set; }
         #endregion
 
         #region Reference Settings
         /// <summary>
-        /// The <see cref="CharacterController"/> that acts as the main representation of the body.
+        /// The <see cref="UnityEngine.CharacterController"/> that acts as the main representation of the body.
         /// </summary>
-        [Header("Reference Settings"), Tooltip("The Character Controller that acts as the main representation of the body."), InternalSetting, SerializeField]
-        protected CharacterController characterController;
-
-        [Tooltip("The Rigidbody that acts as the physical representation of the body."), InternalSetting, SerializeField]
-        protected Rigidbody physicsBody;
+        [Serialized]
+        [field: Header("Reference Settings"), DocumentedByXml, Restricted]
+        public CharacterController Character { get; protected set; }
         /// <summary>
         /// The <see cref="Rigidbody"/> that acts as the physical representation of the body.
         /// </summary>
-        public Rigidbody PhysicsBody => physicsBody;
-
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public Rigidbody PhysicsBody { get; protected set; }
         /// <summary>
         /// The <see cref="CapsuleCollider"/> that acts as the physical collider representation of the body.
         /// </summary>
-        [Tooltip("The Rigidbody that acts as the physical collider representation of the body."), InternalSetting, SerializeField]
-        protected CapsuleCollider rigidbodyCollider;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public CapsuleCollider RigidbodyCollider { get; protected set; }
         /// <summary>
         /// An observable list of GameObjects to ignore collisions on.
         /// </summary>
-        [Tooltip("An observable list of GameObjects to ignore collisions on."), InternalSetting, SerializeField]
-        protected GameObjectObservableList ignoredGameObjectCollisions;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public GameObjectObservableList IgnoredGameObjectCollisions { get; protected set; }
         #endregion
 
-        private MovementInterest _interest = MovementInterest.CharacterControllerUntilAirborne;
         /// <summary>
         /// The object that defines the main source of truth for movement.
         /// </summary>
-        public MovementInterest Interest
-        {
-            get
-            {
-                return _interest;
-            }
-            set
-            {
-                _interest = value;
-
-                switch (value)
-                {
-                    case MovementInterest.CharacterController:
-                    case MovementInterest.CharacterControllerUntilAirborne:
-                        physicsBody.isKinematic = true;
-                        rigidbodySetFrameCount = 0;
-                        break;
-                    case MovementInterest.Rigidbody:
-                    case MovementInterest.RigidbodyUntilGrounded:
-                        physicsBody.isKinematic = false;
-                        rigidbodySetFrameCount = Time.frameCount;
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(value), value, null);
-                }
-            }
-        }
-
+        public MovementInterest Interest { get; set; } = MovementInterest.CharacterControllerUntilAirborne;
         /// <summary>
-        /// Whether <see cref="characterController"/> touches ground.
+        /// Whether <see cref="Character"/> touches ground.
         /// </summary>
         public bool IsCharacterControllerGrounded => wasCharacterControllerGrounded == true;
 
         /// <summary>
-        /// Movement to apply to <see cref="characterController"/> to resolve collisions.
+        /// Movement to apply to <see cref="Character"/> to resolve collisions.
         /// </summary>
         protected static readonly Vector3 collisionResolutionMovement = new Vector3(0.001f, 0f, 0f);
         /// <summary>
@@ -126,7 +103,7 @@
         /// </summary>
         protected Vector3 previousRigidbodyPosition;
         /// <summary>
-        /// Whether <see cref="characterController"/> was grounded previously.
+        /// Whether <see cref="Character"/> was grounded previously.
         /// </summary>
         protected bool? wasCharacterControllerGrounded;
         /// <summary>
@@ -147,7 +124,7 @@
         protected ObjectFollower sourceObjectFollower;
 
         /// <summary>
-        /// Ignores collisions from the given <see cref="GameObject"/> with the <see cref="rigidbodyCollider"/> and <see cref="characterController"/>.
+        /// Ignores collisions from the given <see cref="GameObject"/> with the <see cref="RigidbodyCollider"/> and <see cref="Character"/>.
         /// </summary>
         /// <param name="toIgnore">The object to ignore collisions from.</param>
         public virtual void IgnoreCollisionsWith(GameObject toIgnore)
@@ -164,7 +141,7 @@
         }
 
         /// <summary>
-        /// Ignores collisions from the given <see cref="Collider"/> with the <see cref="rigidbodyCollider"/> and <see cref="characterController"/>.
+        /// Ignores collisions from the given <see cref="Collider"/> with the <see cref="RigidbodyCollider"/> and <see cref="Character"/>.
         /// </summary>
         /// <param name="toIgnore">The collider to ignore collisions from.</param>
         public virtual void IgnoreCollisionsWith(Collider toIgnore)
@@ -176,14 +153,14 @@
 
             if (!ignoredColliders.Contains(toIgnore))
             {
-                Physics.IgnoreCollision(toIgnore, rigidbodyCollider, true);
-                Physics.IgnoreCollision(toIgnore, characterController, true);
+                Physics.IgnoreCollision(toIgnore, RigidbodyCollider, true);
+                Physics.IgnoreCollision(toIgnore, Character, true);
                 ignoredColliders.Add(toIgnore);
             }
         }
 
         /// <summary>
-        /// Resumes collisions with the given <see cref="GameObject"/> with the <see cref="rigidbodyCollider"/> and <see cref="characterController"/>.
+        /// Resumes collisions with the given <see cref="GameObject"/> with the <see cref="RigidbodyCollider"/> and <see cref="Character"/>.
         /// </summary>
         /// <param name="toResume">The object to resume collisions with.</param>
         public virtual void ResumeCollisionsWith(GameObject toResume)
@@ -200,7 +177,7 @@
         }
 
         /// <summary>
-        /// Resumes collisions with the given <see cref="Collider"/> with the <see cref="rigidbodyCollider"/> and <see cref="characterController"/>.
+        /// Resumes collisions with the given <see cref="Collider"/> with the <see cref="RigidbodyCollider"/> and <see cref="Character"/>.
         /// </summary>
         /// <param name="toResume">The collider to resume collisions with.</param>
         public virtual void ResumeCollisionsWith(Collider toResume)
@@ -212,8 +189,8 @@
 
             if (ignoredColliders.Remove(toResume))
             {
-                Physics.IgnoreCollision(toResume, rigidbodyCollider, false);
-                Physics.IgnoreCollision(toResume, characterController, false);
+                Physics.IgnoreCollision(toResume, RigidbodyCollider, false);
+                Physics.IgnoreCollision(toResume, Character, false);
             }
         }
 
@@ -227,36 +204,36 @@
                 return;
             }
 
-            if (Interest != MovementInterest.CharacterController && facade.Offset != null)
+            if (Interest != MovementInterest.CharacterController && Facade.Offset != null)
             {
-                Vector3 offsetPosition = facade.Offset.transform.position;
+                Vector3 offsetPosition = Facade.Offset.transform.position;
                 Vector3 previousPosition = offsetPosition;
 
-                offsetPosition.y = physicsBody.position.y - characterController.skinWidth;
+                offsetPosition.y = PhysicsBody.position.y - Character.skinWidth;
 
-                facade.Offset.transform.position = offsetPosition;
-                facade.Source.transform.position += offsetPosition - previousPosition;
+                Facade.Offset.transform.position = offsetPosition;
+                Facade.Source.transform.position += offsetPosition - previousPosition;
             }
 
             Vector3 previousCharacterControllerPosition;
 
             // Handle walking down stairs/slopes and physics affecting the Rigidbody in general.
-            Vector3 rigidbodyPhysicsMovement = physicsBody.position - previousRigidbodyPosition;
+            Vector3 rigidbodyPhysicsMovement = PhysicsBody.position - previousRigidbodyPosition;
             if (Interest == MovementInterest.Rigidbody || Interest == MovementInterest.RigidbodyUntilGrounded)
             {
-                previousCharacterControllerPosition = characterController.transform.position;
-                characterController.Move(rigidbodyPhysicsMovement);
+                previousCharacterControllerPosition = Character.transform.position;
+                Character.Move(rigidbodyPhysicsMovement);
 
-                if (facade.Offset != null)
+                if (Facade.Offset != null)
                 {
-                    Vector3 movement = characterController.transform.position - previousCharacterControllerPosition;
-                    facade.Offset.transform.position += movement;
-                    facade.Source.transform.position += movement;
+                    Vector3 movement = Character.transform.position - previousCharacterControllerPosition;
+                    Facade.Offset.transform.position += movement;
+                    Facade.Source.transform.position += movement;
                 }
             }
 
             // Position the CharacterController and handle moving the source relative to the offset.
-            Vector3 characterControllerPosition = characterController.transform.position;
+            Vector3 characterControllerPosition = Character.transform.position;
             previousCharacterControllerPosition = characterControllerPosition;
             MatchCharacterControllerWithSource(false);
             Vector3 characterControllerSourceMovement = characterControllerPosition - previousCharacterControllerPosition;
@@ -278,9 +255,9 @@
             }
 
             // Handle walking up stairs/slopes via the CharacterController.
-            if (isGrounded && facade.Offset != null && characterControllerSourceMovement.y > 0f)
+            if (isGrounded && Facade.Offset != null && characterControllerSourceMovement.y > 0f)
             {
-                facade.Offset.transform.position += Vector3.up * characterControllerSourceMovement.y;
+                Facade.Offset.transform.position += Vector3.up * characterControllerSourceMovement.y;
             }
 
             MatchRigidbodyAndColliderWithCharacterController();
@@ -297,7 +274,7 @@
         /// </remarks>
         public virtual void SolveBodyCollisions()
         {
-            if (!isActiveAndEnabled || facade.Source == null)
+            if (!isActiveAndEnabled || Facade.Source == null)
             {
                 return;
             }
@@ -313,18 +290,18 @@
             }
 
             Process();
-            Vector3 characterControllerPosition = characterController.transform.position + characterController.center;
-            Vector3 difference = facade.Source.transform.position - characterControllerPosition;
+            Vector3 characterControllerPosition = Character.transform.position + Character.center;
+            Vector3 difference = Facade.Source.transform.position - characterControllerPosition;
             difference.y = 0f;
 
-            float minimumDistanceToColliders = characterController.radius - facade.sourceThickness;
+            float minimumDistanceToColliders = Character.radius - Facade.SourceThickness;
             if (difference.magnitude < minimumDistanceToColliders)
             {
                 return;
             }
 
             float newDistance = difference.magnitude - minimumDistanceToColliders;
-            (facade.Offset == null ? facade.Source : facade.Offset).transform.position -= difference.normalized * newDistance;
+            (Facade.Offset == null ? Facade.Source : Facade.Offset).transform.position -= difference.normalized * newDistance;
             Process();
         }
 
@@ -333,9 +310,9 @@
         /// </summary>
         public virtual void ConfigureSourceObjectFollower()
         {
-            if (facade.Source != null)
+            if (Facade.Source != null)
             {
-                sourceObjectFollower = facade.Source.GetComponent<ObjectFollower>();
+                sourceObjectFollower = Facade.Source.GetComponent<ObjectFollower>();
             }
         }
 
@@ -344,9 +321,9 @@
         /// </summary>
         public virtual void ConfigureOffsetObjectFollower()
         {
-            if (facade.Offset != null)
+            if (Facade.Offset != null)
             {
-                offsetObjectFollower = facade.Offset.GetComponent<ObjectFollower>();
+                offsetObjectFollower = Facade.Offset.GetComponent<ObjectFollower>();
             }
         }
 
@@ -355,7 +332,7 @@
         /// </summary>
         public virtual void ConfigureIgnoreInteractorsCollisions()
         {
-            foreach (InteractorFacade interactor in facade.ignoredInteractors)
+            foreach (InteractorFacade interactor in Facade.IgnoredInteractors.SubscribableElements)
             {
                 IgnoreInteractorCollision(interactor);
             }
@@ -363,7 +340,7 @@
 
         protected virtual void Awake()
         {
-            Physics.IgnoreCollision(characterController, rigidbodyCollider, true);
+            Physics.IgnoreCollision(Character, RigidbodyCollider, true);
         }
 
         protected virtual void OnEnable()
@@ -393,7 +370,7 @@
         /// <param name="interactor">The interactor to ignore.</param>
         protected virtual void IgnoreInteractorCollision(InteractorFacade interactor)
         {
-            ignoredGameObjectCollisions.AddToEnd(interactor.gameObject);
+            IgnoredGameObjectCollisions.Add(interactor.gameObject);
             interactor.Grabbed.AddListener(IgnoreInteractorGrabbedCollision);
             interactor.Ungrabbed.AddListener(ResumeInteractorUngrabbedCollision);
         }
@@ -435,94 +412,94 @@
         }
 
         /// <summary>
-        /// Changes the height and position of <see cref="characterController"/> to match <see cref="BodyRepresentationFacade.Source"/>.
+        /// Changes the height and position of <see cref="Character"/> to match <see cref="BodyRepresentationFacade.Source"/>.
         /// </summary>
-        /// <param name="setPositionDirectly">Whether to set the position directly or tell <see cref="characterController"/> to move to it.</param>
+        /// <param name="setPositionDirectly">Whether to set the position directly or tell <see cref="Character"/> to move to it.</param>
         protected virtual void MatchCharacterControllerWithSource(bool setPositionDirectly)
         {
-            Vector3 sourcePosition = facade.Source.transform.position;
-            float height = facade.Offset == null
+            Vector3 sourcePosition = Facade.Source.transform.position;
+            float height = Facade.Offset == null
                 ? sourcePosition.y
-                : facade.Offset.transform.InverseTransformPoint(sourcePosition).y;
-            height -= characterController.skinWidth;
+                : Facade.Offset.transform.InverseTransformPoint(sourcePosition).y;
+            height -= Character.skinWidth;
 
             // CharacterController enforces a minimum height of twice its radius, so let's match that here.
-            height = Mathf.Max(height, 2f * characterController.radius);
+            height = Mathf.Max(height, 2f * Character.radius);
 
             Vector3 position = sourcePosition;
             position.y -= height;
 
-            if (facade.Offset != null)
+            if (Facade.Offset != null)
             {
                 // The offset defines the source's "floor".
-                position.y = Mathf.Max(position.y, facade.Offset.transform.position.y + characterController.skinWidth);
+                position.y = Mathf.Max(position.y, Facade.Offset.transform.position.y + Character.skinWidth);
             }
 
             if (setPositionDirectly)
             {
-                characterController.transform.position = position;
+                Character.transform.position = position;
             }
             else
             {
-                Vector3 movement = position - characterController.transform.position;
+                Vector3 movement = position - Character.transform.position;
                 // The CharacterController doesn't resolve any potential collisions in case we don't move it.
-                characterController.Move(movement == Vector3.zero ? movement + collisionResolutionMovement : movement);
+                Character.Move(movement == Vector3.zero ? movement + collisionResolutionMovement : movement);
                 if (movement == Vector3.zero)
                 {
-                    characterController.Move(movement - collisionResolutionMovement);
+                    Character.Move(movement - collisionResolutionMovement);
                 }
             }
 
-            characterController.height = height;
+            Character.height = height;
 
-            Vector3 center = characterController.center;
+            Vector3 center = Character.center;
             center.y = height / 2f;
-            characterController.center = center;
+            Character.center = center;
         }
 
         /// <summary>
-        /// Changes <see cref="rigidbodyCollider"/> to match the collider settings of <see cref="characterController"/> and moves <see cref="PhysicsBody"/> to match <see cref="characterController"/>.
+        /// Changes <see cref="RigidbodyCollider"/> to match the collider settings of <see cref="Character"/> and moves <see cref="PhysicsBody"/> to match <see cref="Character"/>.
         /// </summary>
         protected virtual void MatchRigidbodyAndColliderWithCharacterController()
         {
-            rigidbodyCollider.radius = characterController.radius;
-            rigidbodyCollider.height = characterController.height + characterController.skinWidth;
+            RigidbodyCollider.radius = Character.radius;
+            RigidbodyCollider.height = Character.height + Character.skinWidth;
 
-            Vector3 center = characterController.center;
-            center.y = (characterController.height - characterController.skinWidth) / 2f;
-            rigidbodyCollider.center = center;
+            Vector3 center = Character.center;
+            center.y = (Character.height - Character.skinWidth) / 2f;
+            RigidbodyCollider.center = center;
 
-            physicsBody.position = characterController.transform.position;
+            PhysicsBody.position = Character.transform.position;
         }
 
         /// <summary>
-        /// Checks whether <see cref="characterController"/> is grounded.
+        /// Checks whether <see cref="Character"/> is grounded.
         /// </summary>
         /// <remarks>
         /// <see cref="CharacterController.isGrounded"/> isn't accurate so this method does an additional check using <see cref="Physics"/>.
         /// </remarks>
-        /// <returns>Whether <see cref="characterController"/> is grounded.</returns>
+        /// <returns>Whether <see cref="Character"/> is grounded.</returns>
         protected virtual bool CheckIfCharacterControllerIsGrounded()
         {
-            if (characterController.isGrounded)
+            if (Character.isGrounded)
             {
                 return true;
             }
 
             Collider[] hitColliders = Physics.OverlapSphere(
-                characterController.transform.position
-                + (Vector3.up * (characterController.radius - characterController.skinWidth - 0.001f)),
-                characterController.radius,
-                1 << characterController.gameObject.layer);
+                Character.transform.position
+                + (Vector3.up * (Character.radius - Character.skinWidth - 0.001f)),
+                Character.radius,
+                1 << Character.gameObject.layer);
             foreach (Collider hitCollider in hitColliders)
             {
-                if (hitCollider != characterController
-                    && hitCollider != rigidbodyCollider
+                if (hitCollider != Character
+                    && hitCollider != RigidbodyCollider
                     && !ignoredColliders.Contains(hitCollider)
                     && !Physics.GetIgnoreLayerCollision(
                         hitCollider.gameObject.layer,
-                        characterController.gameObject.layer)
-                    && !Physics.GetIgnoreLayerCollision(hitCollider.gameObject.layer, physicsBody.gameObject.layer))
+                        Character.gameObject.layer)
+                    && !Physics.GetIgnoreLayerCollision(hitCollider.gameObject.layer, PhysicsBody.gameObject.layer))
                 {
                     return true;
                 }
@@ -536,7 +513,7 @@
         /// </summary>
         protected virtual void RememberCurrentPositions()
         {
-            previousRigidbodyPosition = physicsBody.position;
+            previousRigidbodyPosition = PhysicsBody.position;
         }
 
         /// <summary>
@@ -554,11 +531,34 @@
 
             if (isCharacterControllerGrounded)
             {
-                facade.BecameGrounded?.Invoke();
+                Facade.BecameGrounded?.Invoke();
             }
             else
             {
-                facade.BecameAirborne?.Invoke();
+                Facade.BecameAirborne?.Invoke();
+            }
+        }
+
+        /// <summary>
+        /// Called after <see cref="Interest"/> has been changed.
+        /// </summary>
+        [CalledAfterChangeOf(nameof(Interest))]
+        protected virtual void OnAfterInterestChange()
+        {
+            switch (Interest)
+            {
+                case MovementInterest.CharacterController:
+                case MovementInterest.CharacterControllerUntilAirborne:
+                    PhysicsBody.isKinematic = true;
+                    rigidbodySetFrameCount = 0;
+                    break;
+                case MovementInterest.Rigidbody:
+                case MovementInterest.RigidbodyUntilGrounded:
+                    PhysicsBody.isKinematic = false;
+                    rigidbodySetFrameCount = Time.frameCount;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(Interest), Interest, null);
             }
         }
     }

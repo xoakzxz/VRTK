@@ -1,6 +1,8 @@
 ﻿namespace VRTK.Prefabs.Helpers.TrackedCollider
 {
     using UnityEngine;
+    using Malimbe.PropertySerializationAttribute;
+    using Malimbe.XmlDocumentationAttribute;
     using Zinnia.Data.Attribute;
     using Zinnia.Data.Operation;
     using Zinnia.Tracking.Follow;
@@ -8,27 +10,30 @@
     /// <summary>
     /// Sets up the TrackedCollider prefab based on the provided settings and implements the logic to follow the relevant source.
     /// </summary>
-    public class TrackedColliderInternalSetup : MonoBehaviour
+    public class TrackedColliderConfigurator : MonoBehaviour
     {
         #region Facade Settings
         /// <summary>
         /// The public interface facade.
         /// </summary>
-        [Header("Facade Settings"), Tooltip("The public interface facade."), InternalSetting, SerializeField]
-        protected TrackedColliderFacade facade;
+        [Serialized]
+        [field: Header("Facade Settings"), DocumentedByXml, Restricted]
+        public TrackedColliderFacade Facade { get; protected set; }
         #endregion
 
         #region Reference Settings
         /// <summary>
-        /// The <see cref="ObjectFollower"/> that performs the source follow.
+        /// The <see cref="Zinnia.Tracking.Follow.ObjectFollower"/> that performs the source follow.
         /// </summary>
-        [Header("Reference Settings"), Tooltip("The ObjectFollower that performs the source follow."), InternalSetting, SerializeField]
-        protected ObjectFollower objectFollower;
+        [Serialized]
+        [field: Header("Reference Settings"), DocumentedByXml, Restricted]
+        public ObjectFollower ObjectFollower { get; protected set; }
         /// <summary>
         /// The <see cref="TransformPositionExtractor"/> that extracts the source position.
         /// </summary>
-        [Tooltip("The TransformPositionExtractor that extracts the source position."), InternalSetting, SerializeField]
-        protected TransformPositionExtractor positionExtractor;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public TransformPositionExtractor PositionExtractor { get; protected set; }
         #endregion
 
         /// <summary>
@@ -37,8 +42,8 @@
         /// <param name="source">The source to set.</param>
         public virtual void SetSource(GameObject source)
         {
-            objectFollower.AddSource(source);
-            positionExtractor.source = source;
+            ObjectFollower.Sources.Add(source);
+            PositionExtractor.Source = source;
         }
 
         /// <summary>
@@ -46,12 +51,12 @@
         /// </summary>
         public virtual void SnapToSource()
         {
-            positionExtractor.DoExtract();
+            PositionExtractor.DoExtract();
         }
 
         protected virtual void OnEnable()
         {
-            SetSource(facade.Source);
+            SetSource(Facade.Source);
         }
     }
 }

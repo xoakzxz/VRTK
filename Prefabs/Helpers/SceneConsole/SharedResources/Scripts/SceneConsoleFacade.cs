@@ -1,60 +1,82 @@
 ﻿namespace VRTK.Prefabs.Helpers.SceneConsole
 {
-    using System;
     using UnityEngine;
     using UnityEngine.UI;
+    using System;
+    using Malimbe.PropertySerializationAttribute;
+    using Malimbe.XmlDocumentationAttribute;
+    using Zinnia.Data.Attribute;
 
     /// <summary>
-    /// Relays console information to a decorated world space UI canvas.
+    /// The public interface into the SceneConsole Prefab.
     /// </summary>
-    public class ConsoleOutput : MonoBehaviour
+    public class SceneConsoleFacade : MonoBehaviour
     {
+        #region Console Settings
         /// <summary>
         /// The size of the font the log text is displayed in.
         /// </summary>
-        [Tooltip("The size of the font the log text is displayed in.")]
-        public int fontSize = 10;
+        [Serialized]
+        [field: Header("Console Settings"), DocumentedByXml]
+        public int FontSize { get; set; } = 10;
         /// <summary>
         /// The <see cref="Color"/> of the text for an info log message.
         /// </summary>
-        [Tooltip("The color of the text for an info log message.")]
-        public Color infoMessage = Color.black;
+        [Serialized]
+        [field: DocumentedByXml]
+        public Color InfoMessage { get; set; } = Color.black;
         /// <summary>
         /// The <see cref="Color"/> of the text for an assertion log message.
         /// </summary>
-        [Tooltip("The color of the text for an assertion log message.")]
-        public Color assertMessage = Color.black;
+        [Serialized]
+        [field: DocumentedByXml]
+        public Color AssertMessage { get; set; } = Color.black;
         /// <summary>
         /// The <see cref="Color"/> of the text for a warning log message.
         /// </summary>
-        [Tooltip("The color of the text for a warning log message.")]
-        public Color warningMessage = Color.yellow;
+        [Serialized]
+        [field: DocumentedByXml]
+        public Color WarningMessage { get; set; } = Color.yellow;
         /// <summary>
         /// The <see cref="Color"/> of the text for an error log message.
         /// </summary>
-        [Tooltip("The color of the text for an error log message.")]
-        public Color errorMessage = Color.red;
+        [Serialized]
+        [field: DocumentedByXml]
+        public Color ErrorMessage { get; set; } = Color.red;
         /// <summary>
         /// The <see cref="Color"/> of the text for an exception log message.
         /// </summary>
-        [Tooltip("The color of the text for an exception log message.")]
-        public Color exceptionMessage = Color.red;
+        [Serialized]
+        [field: DocumentedByXml]
+        public Color ExceptionMessage { get; set; } = Color.red;
+        /// <summary>
+        /// Determines whether to collapse same messages into one message in the log.
+        /// </summary>
+        [Serialized]
+        [field: DocumentedByXml]
+        public bool CollapseLog { get; set; }
+        #endregion
 
+        #region Reference Settings
         /// <summary>
         /// The console scrollable <see cref="ScrollRect"/> area.
         /// </summary>
-        [Tooltip("The console scrollable ScrollRect area."), SerializeField]
-        protected ScrollRect scrollWindow;
+        [Serialized]
+        [field: Header("Reference Settings"), DocumentedByXml, Restricted]
+        public ScrollRect ScrollWindow { get; protected set; }
         /// <summary>
         /// The output content <see cref="RectTransform"/>.
         /// </summary>
-        [Tooltip("The output content RectTransform."), SerializeField]
-        protected RectTransform consoleRect;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public RectTransform ConsoleRect { get; protected set; }
         /// <summary>
         /// The <see cref="Text "/> element to output the console to.
         /// </summary>
-        [Tooltip("The Text element to output the console to."), SerializeField]
-        protected Text consoleOutput;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public Text ConsoleOutput { get; protected set; }
+        #endregion
 
         /// <summary>
         /// The character to use for the line ending.
@@ -72,28 +94,15 @@
         /// The last log message.
         /// </summary>
         protected string lastMessage;
-        /// <summary>
-        /// Determines whether to collapse same messages into one message in the log.
-        /// </summary>
-        protected bool collapseLog;
-
-        /// <summary>
-        /// Determines whether the console will collapse same message output into the same line. A state of <see langword="true"/> will collapse messages and <see langword="false"/> will print the same message for each line.
-        /// </summary>
-        /// <param name="state">The state of whether to collapse the output messages, <see langword="true"/> will collapse and <see langword="false"/> will not collapse.</param>
-        public virtual void SetCollapse(bool state)
-        {
-            collapseLog = state;
-        }
 
         /// <summary>
         /// Clears the current log view of all messages
         /// </summary>
         public virtual void ClearLog()
         {
-            if (consoleOutput != null)
+            if (ConsoleOutput != null)
             {
-                consoleOutput.text = "";
+                ConsoleOutput.text = "";
             }
             currentBuffer = 0;
             lastMessage = "";
@@ -107,9 +116,9 @@
         protected virtual void OnDisable()
         {
             Application.logMessageReceived -= HandleLog;
-            if (consoleRect != null)
+            if (ConsoleRect != null)
             {
-                consoleRect.sizeDelta = Vector2.zero;
+                ConsoleRect.sizeDelta = Vector2.zero;
             }
         }
 
@@ -125,19 +134,19 @@
             switch (type)
             {
                 case LogType.Error:
-                    color = errorMessage;
+                    color = ErrorMessage;
                     break;
                 case LogType.Assert:
-                    color = assertMessage;
+                    color = AssertMessage;
                     break;
                 case LogType.Warning:
-                    color = warningMessage;
+                    color = WarningMessage;
                     break;
                 case LogType.Log:
-                    color = infoMessage;
+                    color = InfoMessage;
                     break;
                 case LogType.Exception:
-                    color = exceptionMessage;
+                    color = ExceptionMessage;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);
@@ -148,20 +157,20 @@
         }
 
         /// <summary>
-        /// Digests the current Unity log stream and outputs it to the provided <see cref="consoleOutput"/>
+        /// Digests the current Unity log stream and outputs it to the provided <see cref="ConsoleOutput"/>
         /// </summary>
         /// <param name="message">The message from the log stream.</param>
         /// <param name="stackTrace">The stacktrace data from the log stream</param>
         /// <param name="type">The type of the given log message.</param>
         protected virtual void HandleLog(string message, string stackTrace, LogType type)
         {
-            if (consoleOutput == null || scrollWindow == null || consoleRect == null)
+            if (ConsoleOutput == null || ScrollWindow == null || ConsoleRect == null)
             {
                 return;
             }
 
             string logOutput = GetMessage(message, type);
-            string consoleOutputText = consoleOutput.text;
+            string consoleOutputText = ConsoleOutput.text;
 
             if (currentBuffer >= lineBuffer)
             {
@@ -189,16 +198,16 @@
                 currentBuffer = halfLineBuffer;
             }
 
-            if (!collapseLog || lastMessage != logOutput)
+            if (!CollapseLog || lastMessage != logOutput)
             {
                 consoleOutputText += logOutput;
                 lastMessage = logOutput;
             }
 
-            consoleOutput.text = consoleOutputText;
-            consoleOutput.fontSize = fontSize;
-            consoleRect.sizeDelta = new Vector2(consoleOutput.preferredWidth, consoleOutput.preferredHeight);
-            scrollWindow.verticalNormalizedPosition = 0;
+            ConsoleOutput.text = consoleOutputText;
+            ConsoleOutput.fontSize = FontSize;
+            ConsoleRect.sizeDelta = new Vector2(ConsoleOutput.preferredWidth, ConsoleOutput.preferredHeight);
+            ScrollWindow.verticalNormalizedPosition = 0;
             currentBuffer++;
         }
     }

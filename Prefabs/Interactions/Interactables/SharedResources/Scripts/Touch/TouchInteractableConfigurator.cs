@@ -2,7 +2,10 @@
 {
     using UnityEngine;
     using System.Collections.Generic;
+    using Malimbe.XmlDocumentationAttribute;
+    using Malimbe.PropertySerializationAttribute;
     using Zinnia.Rule;
+    using Zinnia.Event;
     using Zinnia.Extension;
     using Zinnia.Data.Attribute;
     using Zinnia.Data.Collection;
@@ -11,59 +14,66 @@
     using Zinnia.Tracking.Collision.Active.Operation;
     using VRTK.Prefabs.Interactions.Interactors;
 
-    public class TouchInteractableInternalSetup : MonoBehaviour
+    public class TouchInteractableConfigurator : MonoBehaviour
     {
         #region Facade Settings
-        [Header("Facade Settings"), Tooltip("The public interface facade."), SerializeField]
-        private InteractableFacade _facade = null;
         /// <summary>
         /// The public interface facade.
         /// </summary>
-        public InteractableFacade Facade => _facade;
+        [Serialized]
+        [field: Header("Facade Settings"), DocumentedByXml, Restricted]
+        public InteractableFacade Facade { get; protected set; }
         #endregion
 
         #region Touch Consumer Settings
         /// <summary>
         /// The <see cref="ActiveCollisionConsumer"/> that listens for the touch payload.
         /// </summary>
-        [Header("Touch Consumer Settings"), Tooltip("The ActiveCollisionConsumer that listens for the touch payload."), InternalSetting, SerializeField]
-        protected ActiveCollisionConsumer touchConsumer;
+        [Serialized]
+        [field: Header("Touch Consumer Settings"), DocumentedByXml, Restricted]
+        public ActiveCollisionConsumer TouchConsumer { get; protected set; }
         /// <summary>
         /// The <see cref="ActiveCollisionConsumer"/> that listens for the untouch payload.
         /// </summary>
-        [Tooltip("The ActiveCollisionConsumer that listens for the untouch payload."), InternalSetting, SerializeField]
-        protected ActiveCollisionConsumer untouchConsumer;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public ActiveCollisionConsumer UntouchConsumer { get; protected set; }
         #endregion
 
         #region Touch Settings
         /// <summary>
-        /// The <see cref="GameObjectObservableSet"/> that holds the current touching objects data.
+        /// The <see cref="GameObjectObservableList"/> that holds the current touching objects data.
         /// </summary>
-        [Header("Touch Settings"), Tooltip("The GameObjectSet that holds the current touching objects data."), InternalSetting, SerializeField]
-        protected GameObjectObservableSet currentTouchingObjects;
+        [Serialized]
+        [field: Header("Touch Settings"), DocumentedByXml, Restricted]
+        public GameObjectObservableList CurrentTouchingObjects { get; protected set; }
         /// <summary>
-        /// The <see cref="ListContainsRule"/> used to determine the touch validity.
+        /// The <see cref="GameObjectEventProxyEmitter"/> used to determine the touch validity.
         /// </summary>
-        [Tooltip("The ListContainsRule used to determine the touch validity."), InternalSetting, SerializeField]
-        protected ListContainsRule touchValidity;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public GameObjectEventProxyEmitter TouchValidity { get; set; }
         #endregion
 
         #region Interactor Settings
         /// <summary>
         /// The <see cref="ActiveCollisionsContainer"/> for potential interactors.
         /// </summary>
-        [Header("Interactor Settings"), Tooltip("The ActiveCollisionsContainer for potential interactors."), InternalSetting, SerializeField]
-        protected ActiveCollisionsContainer potentialInteractors;
+        [Serialized]
+        [field: Header("Interactor Settings"), DocumentedByXml, Restricted]
+        public ActiveCollisionsContainer PotentialInteractors { get; protected set; }
         /// <summary>
         /// The <see cref="NotifierContainerExtractor"/> for adding active interactors.
         /// </summary>
-        [Tooltip("The NotifierContainerExtractor for adding active interactors."), InternalSetting, SerializeField]
-        protected NotifierContainerExtractor addActiveInteractor;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public NotifierContainerExtractor AddActiveInteractor { get; protected set; }
         /// <summary>
         /// The <see cref="NotifierContainerExtractor"/> for removing active interactors.
         /// </summary>
-        [Tooltip("The NotifierContainerExtractor for removing active interactors."), InternalSetting, SerializeField]
-        protected NotifierContainerExtractor removeActiveInteractor;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public NotifierContainerExtractor RemoveActiveInteractor { get; protected set; }
         #endregion
 
         /// <summary>
@@ -113,25 +123,12 @@
         }
 
         /// <summary>
-        /// Configures the interactor touch validity.
-        /// </summary>
-        /// <param name="interactors">The interactors to add to the validity list.</param>
-        public virtual void ConfigureTouchValidity(List<InteractorFacade> interactors)
-        {
-            touchValidity.objects.Clear();
-            foreach (InteractorFacade interactor in interactors)
-            {
-                touchValidity.objects.Add(interactor.gameObject);
-            }
-        }
-
-        /// <summary>
         /// Sets the consumer containers to the current active container.
         /// </summary>
         public virtual void ConfigureContainer()
         {
-            touchConsumer.container = Facade.ConsumerContainer;
-            untouchConsumer.container = Facade.ConsumerContainer;
+            TouchConsumer.Container = Facade.ConsumerContainer;
+            UntouchConsumer.Container = Facade.ConsumerContainer;
         }
 
         /// <summary>
@@ -142,12 +139,12 @@
         {
             touchingInteractors.Clear();
 
-            if (currentTouchingObjects == null)
+            if (CurrentTouchingObjects == null)
             {
                 return touchingInteractors;
             }
 
-            foreach (GameObject element in currentTouchingObjects.Elements)
+            foreach (GameObject element in CurrentTouchingObjects.NonSubscribableElements)
             {
                 InteractorFacade interactor = element.TryGetComponent<InteractorFacade>(true, true);
                 if (interactor != null)
@@ -162,7 +159,7 @@
         protected virtual void OnEnable()
         {
             ConfigureContainer();
-            ConfigureTouchValidity(Facade.disallowedTouchInteractors);
+            TouchValidity.ReceiveValidity = Facade.DisallowedTouchInteractors;
             LinkActiveInteractorCollisions();
         }
 
@@ -176,11 +173,11 @@
         /// </summary>
         protected virtual void LinkActiveInteractorCollisions()
         {
-            Facade.CollisionNotifier.CollisionStarted.AddListener(potentialInteractors.Add);
-            Facade.CollisionNotifier.CollisionStarted.AddListener(addActiveInteractor.DoExtract);
+            Facade.CollisionNotifier.CollisionStarted.AddListener(PotentialInteractors.Add);
+            Facade.CollisionNotifier.CollisionStarted.AddListener(AddActiveInteractor.DoExtract);
             Facade.CollisionNotifier.CollisionChanged.AddListener(ProcessPotentialInteractorContentChange);
-            Facade.CollisionNotifier.CollisionStopped.AddListener(potentialInteractors.Remove);
-            Facade.CollisionNotifier.CollisionStopped.AddListener(removeActiveInteractor.DoExtract);
+            Facade.CollisionNotifier.CollisionStopped.AddListener(PotentialInteractors.Remove);
+            Facade.CollisionNotifier.CollisionStopped.AddListener(RemoveActiveInteractor.DoExtract);
         }
 
         /// <summary>
@@ -188,11 +185,11 @@
         /// </summary>
         protected virtual void UnlinkActiveInteractorCollisions()
         {
-            Facade.CollisionNotifier.CollisionStarted.RemoveListener(potentialInteractors.Add);
-            Facade.CollisionNotifier.CollisionStarted.RemoveListener(addActiveInteractor.DoExtract);
+            Facade.CollisionNotifier.CollisionStarted.RemoveListener(PotentialInteractors.Add);
+            Facade.CollisionNotifier.CollisionStarted.RemoveListener(AddActiveInteractor.DoExtract);
             Facade.CollisionNotifier.CollisionChanged.RemoveListener(ProcessPotentialInteractorContentChange);
-            Facade.CollisionNotifier.CollisionStopped.RemoveListener(potentialInteractors.Remove);
-            Facade.CollisionNotifier.CollisionStopped.RemoveListener(removeActiveInteractor.DoExtract);
+            Facade.CollisionNotifier.CollisionStopped.RemoveListener(PotentialInteractors.Remove);
+            Facade.CollisionNotifier.CollisionStopped.RemoveListener(RemoveActiveInteractor.DoExtract);
         }
 
         /// <summary>
@@ -201,7 +198,7 @@
         /// <param name="data">The changed collision data.</param>
         protected virtual void ProcessPotentialInteractorContentChange(CollisionNotifier.EventData data)
         {
-            potentialInteractors.ProcessContentsChanged();
+            PotentialInteractors.ProcessContentsChanged();
         }
     }
 }

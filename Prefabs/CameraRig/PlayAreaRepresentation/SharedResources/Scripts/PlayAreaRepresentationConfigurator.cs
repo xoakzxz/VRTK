@@ -1,6 +1,8 @@
 ﻿namespace VRTK.Prefabs.PlayAreaRepresentation
 {
     using UnityEngine;
+    using Malimbe.XmlDocumentationAttribute;
+    using Malimbe.PropertySerializationAttribute;
     using Zinnia.Data.Attribute;
     using Zinnia.Data.Operation;
     using Zinnia.Tracking.CameraRig;
@@ -8,42 +10,48 @@
     /// <summary>
     /// Sets up the PlayAreaRepresentation Prefab based on the provided user settings.
     /// </summary>
-    public class PlayAreaRepresentationInternalSetup : MonoBehaviour
+    public class PlayAreaRepresentationConfigurator : MonoBehaviour
     {
         #region Facade Settings
         /// <summary>
-        /// The public interface facade.
+        /// The public facade.
         /// </summary>
-        [Header("Facade Settings"), Tooltip("The public interface facade."), InternalSetting, SerializeField]
-        protected PlayAreaRepresentationFacade facade;
+        [Serialized]
+        [field: Header("Facade Settings"), DocumentedByXml, Restricted]
+        public PlayAreaRepresentationFacade Facade { get; protected set; }
         #endregion
 
         #region Operator Settings
         /// <summary>
         /// The <see cref="PlayAreaDimensionsExtractor"/> component for extracting the PlayArea dimension data.
         /// </summary>
-        [Header("Operator Settings"), Tooltip("The PlayAreaDimensionsExtractor component for extracting the PlayArea dimension data."), InternalSetting, SerializeField]
-        protected PlayAreaDimensionsExtractor dimensionExtractor;
+        [Serialized]
+        [field: Header("Operator Settings"), DocumentedByXml, Restricted]
+        public PlayAreaDimensionsExtractor DimensionExtractor { get; protected set; }
         /// <summary>
         /// The <see cref="TransformScaleMutator"/> component for scaling the given target.
         /// </summary>
-        [Tooltip("The TransformScaleMutator component for scaling the given target."), InternalSetting, SerializeField]
-        protected TransformScaleMutator objectScaler;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public TransformScaleMutator ObjectScaler { get; protected set; }
         /// <summary>
         /// The <see cref="TransformPositionMutator"/> component for positioning the given target.
         /// </summary>
-        [Tooltip("The TransformPositionMutator component for positioning the given target."), InternalSetting, SerializeField]
-        protected TransformPositionMutator objectPositioner;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public TransformPositionMutator ObjectPositioner { get; protected set; }
         /// <summary>
         /// The <see cref="TransformPositionExtractor"/> component extracting the offset origin position.
         /// </summary>
-        [Tooltip("The TransformPositionExtractor component extracting the offset origin position."), InternalSetting, SerializeField]
-        protected TransformPositionExtractor offsetOriginExtractor;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public TransformPositionExtractor OffsetOriginExtractor { get; protected set; }
         /// <summary>
         /// The <see cref="TransformPositionExtractor"/> component extracting the offset destination position.
         /// </summary>
-        [Tooltip("The TransformPositionExtractor component extracting the offset destination position."), InternalSetting, SerializeField]
-        protected TransformPositionExtractor offsetDestinationExtractor;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public TransformPositionExtractor OffsetDestinationExtractor { get; protected set; }
         #endregion
 
         /// <summary>
@@ -51,8 +59,8 @@
         /// </summary>
         public virtual void ConfigureTarget()
         {
-            objectScaler.Target = facade.Target;
-            objectPositioner.Target = facade.Target;
+            ObjectScaler.Target = Facade.Target;
+            ObjectPositioner.Target = Facade.Target;
         }
 
         /// <summary>
@@ -60,7 +68,7 @@
         /// </summary>
         public virtual void ConfigureOffsetOrigin()
         {
-            offsetOriginExtractor.source = facade.OffsetOrigin;
+            OffsetOriginExtractor.Source = Facade.OffsetOrigin;
         }
 
         /// <summary>
@@ -68,7 +76,7 @@
         /// </summary>
         public virtual void ConfigureOffsetDestination()
         {
-            offsetDestinationExtractor.source = facade.OffsetDestination;
+            OffsetDestinationExtractor.Source = Facade.OffsetDestination;
         }
 
         /// <summary>
@@ -76,7 +84,7 @@
         /// </summary>
         public virtual void RecalculateDimensions()
         {
-            dimensionExtractor.DoExtract();
+            DimensionExtractor.DoExtract();
         }
 
         protected virtual void OnEnable()
@@ -84,12 +92,12 @@
             ConfigureTarget();
             ConfigureOffsetOrigin();
             ConfigureOffsetDestination();
-            objectScaler.gameObject.SetActive(true);
+            ObjectScaler.gameObject.SetActive(true);
         }
 
         protected virtual void OnDisable()
         {
-            objectScaler.gameObject.SetActive(false);
+            ObjectScaler.gameObject.SetActive(false);
         }
     }
 }

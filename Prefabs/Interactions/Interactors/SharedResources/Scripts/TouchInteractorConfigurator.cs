@@ -2,6 +2,8 @@
 {
     using UnityEngine;
     using System.Collections.Generic;
+    using Malimbe.XmlDocumentationAttribute;
+    using Malimbe.PropertySerializationAttribute;
     using Zinnia.Extension;
     using Zinnia.Data.Attribute;
     using Zinnia.Tracking.Collision;
@@ -11,37 +13,42 @@
     /// <summary>
     /// Sets up the Interactor Prefab touch settings based on the provided user settings.
     /// </summary>
-    public class TouchInteractorInternalSetup : MonoBehaviour
+    public class TouchInteractorConfigurator : MonoBehaviour
     {
         #region Facade Settings
         /// <summary>
         /// The public interface facade.
         /// </summary>
-        [Header("Facade Settings"), Tooltip("The public interface facade."), InternalSetting, SerializeField]
-        protected InteractorFacade facade;
+        [Serialized]
+        [field: Header("Facade Settings"), DocumentedByXml, Restricted]
+        public InteractorFacade Facade { get; protected set; }
         #endregion
 
         #region Touch Settings
         /// <summary>
-        /// The <see cref="ActiveCollisionsContainer"/> that holds all current collisions.
+        /// The <see cref="Zinnia.Tracking.Collision.Active.ActiveCollisionsContainer"/> that holds all current collisions.
         /// </summary>
-        [Header("Touch Settings"), Tooltip("The ActiveCollisionsContainer that holds all current collisions."), InternalSetting, SerializeField]
-        protected ActiveCollisionsContainer activeCollisionsContainer;
+        [Serialized]
+        [field: Header("Touch Settings"), DocumentedByXml, Restricted]
+        public ActiveCollisionsContainer ActiveCollisionsContainer { get; protected set; }
         /// <summary>
         /// The <see cref="Slicer"/> that holds the current active collision.
         /// </summary>
-        [Tooltip("The Slicer that holds the current active collision."), InternalSetting, SerializeField]
-        protected Slicer currentActiveCollision;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public Slicer CurrentActiveCollision { get; protected set; }
         /// <summary>
         /// The <see cref="ActiveCollisionPublisher"/> for checking valid start touching collisions.
         /// </summary>
-        [Tooltip("The ActiveCollisionPublisher for checking valid start touching collisions."), InternalSetting, SerializeField]
-        protected ActiveCollisionPublisher startTouchingPublisher;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public ActiveCollisionPublisher StartTouchingPublisher { get; protected set; }
         /// <summary>
         /// The <see cref="ActiveCollisionPublisher"/> for checking valid stop touching collisions.
         /// </summary>
-        [Tooltip("The ActiveCollisionPublisher for checking valid stop touching collisions."), InternalSetting, SerializeField]
-        protected ActiveCollisionPublisher stopTouchingPublisher;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public ActiveCollisionPublisher StopTouchingPublisher { get; protected set; }
         #endregion
 
         /// <summary>
@@ -63,14 +70,14 @@
         /// </summary>
         public virtual void ConfigurePublishers()
         {
-            if (startTouchingPublisher != null)
+            if (StartTouchingPublisher != null)
             {
-                startTouchingPublisher.payload.sourceContainer = facade.gameObject;
+                StartTouchingPublisher.Payload.SourceContainer = Facade.gameObject;
             }
 
-            if (stopTouchingPublisher != null)
+            if (StopTouchingPublisher != null)
             {
-                stopTouchingPublisher.payload.sourceContainer = facade.gameObject;
+                StopTouchingPublisher.Payload.SourceContainer = Facade.gameObject;
             }
         }
 
@@ -81,8 +88,8 @@
 
         protected virtual void OnDisable()
         {
-            stopTouchingPublisher.ForceSetActiveCollisions(startTouchingPublisher.payload);
-            stopTouchingPublisher.ForcePublish();
+            StopTouchingPublisher.SetActiveCollisionsEvenWhenDisabled(StartTouchingPublisher.Payload);
+            StopTouchingPublisher.ForcePublish();
         }
 
         /// <summary>
@@ -93,14 +100,14 @@
         {
             touchedObjects.Clear();
 
-            if (activeCollisionsContainer == null)
+            if (ActiveCollisionsContainer == null)
             {
                 return touchedObjects;
             }
 
-            foreach (CollisionNotifier.EventData element in activeCollisionsContainer.Elements)
+            foreach (CollisionNotifier.EventData element in ActiveCollisionsContainer.Elements)
             {
-                touchedObjects.Add(element.collider.GetContainingTransform().gameObject);
+                touchedObjects.Add(element.ColliderData.GetContainingTransform().gameObject);
             }
 
             return touchedObjects;
@@ -112,12 +119,12 @@
         /// <returns>The currently active touched GameObject.</returns>
         protected virtual GameObject GetActiveTouchedObject()
         {
-            if (currentActiveCollision == null || currentActiveCollision.SlicedList.activeCollisions.Count == 0)
+            if (CurrentActiveCollision == null || CurrentActiveCollision.SlicedList.ActiveCollisions.Count == 0)
             {
                 return null;
             }
 
-            return currentActiveCollision.SlicedList.activeCollisions[0].collider.GetContainingTransform().gameObject;
+            return CurrentActiveCollision.SlicedList.ActiveCollisions[0].ColliderData.GetContainingTransform().gameObject;
         }
     }
 }

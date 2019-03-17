@@ -138,9 +138,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: efa8f36bc7d05684daf439b863eeb4da, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _grabAction: {fileID: 0}
-  _velocityTracker: {fileID: 0}
-  _grabPrecognition: 0.1
+  grabAction: {fileID: 0}
+  velocityTracker: {fileID: 0}
+  grabPrecognition: 0.1
   Touched:
     m_PersistentCalls:
       m_Calls: []
@@ -161,8 +161,8 @@ MonoBehaviour:
       m_Calls: []
     m_TypeName: VRTK.Prefabs.Interactions.Interactors.InteractorFacade+UnityEvent,
       VRTK.Prefabs.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-  touchInteractorSetup: {fileID: 575120022572046411}
-  grabInteractorSetup: {fileID: 1190284288443484346}
+  touchConfiguration: {fileID: 575120022572046411}
+  grabConfiguration: {fileID: 1190284288443484346}
 --- !u!114 &4759317488430690568
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -312,6 +312,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 3924256656882590479}
     m_Modifications:
+    - target: {fileID: 6024666130437826845, guid: 2cbd94cbb01df384eb07028e0f09c402,
+        type: 3}
+      propertyPath: m_Name
+      value: Interaction.Grabbing
+      objectReference: {fileID: 0}
     - target: {fileID: 2635737225441082409, guid: 2cbd94cbb01df384eb07028e0f09c402,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -372,21 +377,6 @@ PrefabInstance:
       propertyPath: facade
       value: 
       objectReference: {fileID: 5839046843648530548}
-    - target: {fileID: 4568962547894877131, guid: 2cbd94cbb01df384eb07028e0f09c402,
-        type: 3}
-      propertyPath: attachPoint
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 4568962547894877131, guid: 2cbd94cbb01df384eb07028e0f09c402,
-        type: 3}
-      propertyPath: velocityTracker
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 6024666130437826845, guid: 2cbd94cbb01df384eb07028e0f09c402,
-        type: 3}
-      propertyPath: m_Name
-      value: Interaction.Grabbing
-      objectReference: {fileID: 0}
     - target: {fileID: 1855375965548148993, guid: 2cbd94cbb01df384eb07028e0f09c402,
         type: 3}
       propertyPath: m_IsActive
@@ -442,6 +432,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 3924256656882590479}
     m_Modifications:
+    - target: {fileID: 3916300416617427846, guid: 734c79b0fd2a7ec46932982b9fa8b279,
+        type: 3}
+      propertyPath: m_Name
+      value: Interaction.Touching
+      objectReference: {fileID: 0}
     - target: {fileID: 3916300416617427844, guid: 734c79b0fd2a7ec46932982b9fa8b279,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -502,16 +497,6 @@ PrefabInstance:
       propertyPath: facade
       value: 
       objectReference: {fileID: 5839046843648530548}
-    - target: {fileID: 3916300416617427846, guid: 734c79b0fd2a7ec46932982b9fa8b279,
-        type: 3}
-      propertyPath: m_Name
-      value: Interaction.Touching
-      objectReference: {fileID: 0}
-    - target: {fileID: 3916300417121912082, guid: 734c79b0fd2a7ec46932982b9fa8b279,
-        type: 3}
-      propertyPath: source
-      value: 
-      objectReference: {fileID: 2741542572093734609}
     - target: {fileID: 7969100211041010529, guid: 734c79b0fd2a7ec46932982b9fa8b279,
         type: 3}
       propertyPath: Emitted.m_PersistentCalls.m_Calls.Array.size
@@ -542,6 +527,11 @@ PrefabInstance:
       propertyPath: Emitted.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
       value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
+    - target: {fileID: 3916300417121912082, guid: 734c79b0fd2a7ec46932982b9fa8b279,
+        type: 3}
+      propertyPath: source
+      value: 
+      objectReference: {fileID: 2741542572093734609}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 734c79b0fd2a7ec46932982b9fa8b279, type: 3}
 --- !u!4 &575120022572046410 stripped

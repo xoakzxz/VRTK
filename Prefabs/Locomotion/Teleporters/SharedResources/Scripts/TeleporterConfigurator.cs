@@ -2,6 +2,8 @@
 {
     using UnityEngine;
     using System.Collections.Generic;
+    using Malimbe.XmlDocumentationAttribute;
+    using Malimbe.PropertySerializationAttribute;
     using Zinnia.Visual;
     using Zinnia.Data.Type;
     using Zinnia.Data.Attribute;
@@ -11,55 +13,63 @@
     /// <summary>
     /// Sets up the Teleport Prefab based on the provided user settings.
     /// </summary>
-    public class TeleporterInternalSetup : MonoBehaviour
+    public class TeleporterConfigurator : MonoBehaviour
     {
         #region Facade Settings
         /// <summary>
         /// The public interface facade.
         /// </summary>
-        [Header("Facade Settings"), Tooltip("The public interface facade."), InternalSetting, SerializeField]
-        protected TeleporterFacade facade;
+        [Serialized]
+        [field: Header("Facade Settings"), DocumentedByXml, Restricted]
+        public TeleporterFacade Facade { get; protected set; }
         #endregion
 
         #region Teleporter Settings
         /// <summary>
         /// The <see cref="SurfaceLocator"/> to use for the teleporting event.
         /// </summary>
-        [Header("Teleporter Settings"), Tooltip("The Surface Locator to use for the teleporting event."), InternalSetting, SerializeField]
-        protected SurfaceLocator surfaceTeleporter;
+        [Serialized]
+        [field: Header("Teleporter Settings"), DocumentedByXml, Restricted]
+        public SurfaceLocator SurfaceTeleporter { get; protected set; }
         /// <summary>
         /// The <see cref="TransformPropertyApplier"/> to use for the teleporting event.
         /// </summary>
-        [Tooltip("The Transform Property Applier to use for the teleporting event."), InternalSetting, SerializeField]
-        protected TransformPropertyApplier modifyTeleporter;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public TransformPropertyApplier ModifyTeleporter { get; protected set; }
         #endregion
 
         #region Alias Settings
         /// <summary>
         /// The <see cref="SurfaceLocator"/> to set aliases on.
         /// </summary>
-        [Header("Alias Settings"), Tooltip("The Surface Locators to set aliases on."), InternalSetting, SerializeField]
-        protected List<SurfaceLocator> surfaceLocatorAliases = new List<SurfaceLocator>();
+        [Serialized]
+        [field: Header("Alias Settings"), DocumentedByXml, Restricted]
+        public List<SurfaceLocator> SurfaceLocatorAliases { get; protected set; } = new List<SurfaceLocator>();
         /// <summary>
         /// The <see cref="SurfaceLocator"/> to set rules on.
         /// </summary>
-        [Tooltip("The Surface Locators to set rules on."), InternalSetting, SerializeField]
-        protected List<SurfaceLocator> surfaceLocatorRules = new List<SurfaceLocator>();
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public List<SurfaceLocator> SurfaceLocatorRules { get; protected set; } = new List<SurfaceLocator>();
         /// <summary>
         /// The <see cref="TransformPropertyApplier"/> collection to set aliases on.
         /// </summary>
-        [Tooltip("The Transform Property Applier collection to set aliases on."), InternalSetting, SerializeField]
-        protected List<TransformPropertyApplier> transformPropertyApplierAliases = new List<TransformPropertyApplier>();
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public List<TransformPropertyApplier> TransformPropertyApplierAliases { get; protected set; } = new List<TransformPropertyApplier>();
         /// <summary>
         /// The <see cref="TransformPropertyApplier"/> collection to ignore offsets on.
         /// </summary>
-        [Tooltip("The Transform Property Applier collection to ignore offsets on."), InternalSetting, SerializeField]
-        protected List<TransformPropertyApplier> transformPropertyApplierIgnoreOffsetAliases = new List<TransformPropertyApplier>();
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public List<TransformPropertyApplier> TransformPropertyApplierIgnoreOffsetAliases { get; protected set; } = new List<TransformPropertyApplier>();
         /// <summary>
         /// The scene <see cref="Camera"/>s to set the <see cref="CameraColorOverlay"/>s to affect.
         /// </summary>
-        [Tooltip("The scene Cameras to set the CameraColorOverlays to affect."), InternalSetting, SerializeField]
-        protected List<CameraColorOverlay> cameraColorOverlays = new List<CameraColorOverlay>();
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public List<CameraColorOverlay> CameraColorOverlays { get; protected set; } = new List<CameraColorOverlay>();
         #endregion
 
         /// <summary>
@@ -68,15 +78,15 @@
         /// <param name="destination">The location to attempt to teleport to.</param>
         public virtual void Teleport(TransformData destination)
         {
-            if (surfaceTeleporter != null)
+            if (SurfaceTeleporter != null)
             {
-                surfaceTeleporter.Locate(destination);
+                SurfaceTeleporter.Locate(destination);
             }
 
-            if (modifyTeleporter != null)
+            if (ModifyTeleporter != null)
             {
-                modifyTeleporter.Source = destination;
-                modifyTeleporter.Apply();
+                ModifyTeleporter.Source = destination;
+                ModifyTeleporter.Apply();
             }
         }
 
@@ -86,7 +96,7 @@
         /// <param name="data">The location data.</param>
         public virtual void NotifyTeleporting(TransformPropertyApplier.EventData data)
         {
-            facade.Teleporting?.Invoke(data);
+            Facade.Teleporting?.Invoke(data);
         }
 
         /// <summary>
@@ -95,7 +105,7 @@
         /// <param name="data">The location data.</param>
         public virtual void NotifyTeleported(TransformPropertyApplier.EventData data)
         {
-            facade.Teleported?.Invoke(data);
+            Facade.Teleported?.Invoke(data);
         }
 
         /// <summary>
@@ -103,9 +113,9 @@
         /// </summary>
         public virtual void ConfigureSurfaceLocatorAliases()
         {
-            foreach (SurfaceLocator currentLocator in surfaceLocatorAliases)
+            foreach (SurfaceLocator currentLocator in SurfaceLocatorAliases)
             {
-                currentLocator.SearchOrigin = facade.Offset;
+                currentLocator.SearchOrigin = Facade.Offset;
             }
         }
 
@@ -114,9 +124,9 @@
         /// </summary>
         public virtual void ConfigureSurfaceLocatorRules()
         {
-            foreach (SurfaceLocator currentLocator in surfaceLocatorRules)
+            foreach (SurfaceLocator currentLocator in SurfaceLocatorRules)
             {
-                currentLocator.targetValidity = facade.TargetValidity;
+                currentLocator.TargetValidity = Facade.TargetValidity;
             }
         }
 
@@ -125,14 +135,19 @@
         /// </summary>
         public virtual void ConfigureTransformPropertyAppliers()
         {
-            foreach (TransformPropertyApplier currentApplier in transformPropertyApplierAliases)
+            foreach (TransformPropertyApplier currentApplier in TransformPropertyApplierAliases)
             {
-                currentApplier.Target = facade.Target;
+                currentApplier.Target = Facade.Target;
                 currentApplier.Offset = null;
-                if (!facade.OnlyOffsetFloorSnap || !transformPropertyApplierIgnoreOffsetAliases.Contains(currentApplier))
+
+                if (!TransformPropertyApplierIgnoreOffsetAliases.Contains(currentApplier))
                 {
-                    currentApplier.Offset = facade.Offset;
+                    currentApplier.Offset = Facade.Offset;
+                    continue;
                 }
+
+                currentApplier.Offset = Facade.OffsetUsage == TeleporterFacade.OffsetType.OffsetAlwaysWithDestinationRotation || Facade.OffsetUsage == TeleporterFacade.OffsetType.OffsetAlwaysIgnoreDestinationRotation ? Facade.Offset : null;
+                currentApplier.ApplyRotationOffsetOnAxis = Facade.OffsetUsage == TeleporterFacade.OffsetType.OffsetAlwaysWithDestinationRotation ? currentApplier.ApplyRotationOffsetOnAxis : Vector3State.False;
             }
         }
 
@@ -141,9 +156,9 @@
         /// </summary>
         public virtual void ConfigureCameraColorOverlays()
         {
-            foreach (CameraColorOverlay currentOverlay in cameraColorOverlays)
+            foreach (CameraColorOverlay currentOverlay in CameraColorOverlays)
             {
-                currentOverlay.validCameras = facade.SceneCameras;
+                currentOverlay.CameraValidity = Facade.CameraValidity;
             }
         }
 

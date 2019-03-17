@@ -1,6 +1,8 @@
 ﻿namespace VRTK.Prefabs.Helpers.AxisRotator
 {
     using UnityEngine;
+    using Malimbe.PropertySerializationAttribute;
+    using Malimbe.XmlDocumentationAttribute;
     using Zinnia.Action;
     using Zinnia.Data.Attribute;
     using Zinnia.Data.Operation;
@@ -8,37 +10,42 @@
     /// <summary>
     /// Sets up the AxisRotator prefab based on the provided settings and implements the logic to allow rotating an object based on axis data.
     /// </summary>
-    public class AxisRotatorInternalSetup : MonoBehaviour
+    public class AxisRotatorConfigurator : MonoBehaviour
     {
         #region Facade Settings
         /// <summary>
         /// The public interface facade.
         /// </summary>
-        [Header("Facade Settings"), Tooltip("The public interface facade."), InternalSetting, SerializeField]
-        protected AxisRotatorFacade facade;
+        [Serialized]
+        [field: Header("Facade Settings"), DocumentedByXml, Restricted]
+        public AxisRotatorFacade Facade { get; protected set; }
         #endregion
 
         #region Reference Settings
         /// <summary>
         /// The lateral <see cref="FloatAction"/> to map to.
         /// </summary>
-        [Header("Reference Settings"), Tooltip("The lateral FloatAction to map to."), InternalSetting, SerializeField]
-        protected FloatAction lateralAxis;
+        [Serialized]
+        [field: Header("Reference Settings"), DocumentedByXml, Restricted]
+        public FloatAction LateralAxis { get; protected set; }
         /// <summary>
         /// The longitudinal <see cref="FloatAction"/> to map to.
         /// </summary>
-        [Tooltip("The longitudinal FloatAction to map to."), InternalSetting, SerializeField]
-        protected FloatAction longitudinalAxis;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public FloatAction LongitudinalAxis { get; protected set; }
         /// <summary>
         /// The mutator to update the target rotation.
         /// </summary>
-        [Tooltip("The mutator to update the target rotation."), InternalSetting, SerializeField]
-        protected TransformEulerRotationMutator rotationMutator;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public TransformEulerRotationMutator RotationMutator { get; protected set; }
         /// <summary>
         /// The extractor to get the target offset direction data.
         /// </summary>
-        [Tooltip("The extractor to get the target offset direction data."), InternalSetting, SerializeField]
-        protected TransformDirectionExtractor directionExtractor;
+        [Serialized]
+        [field: DocumentedByXml, Restricted]
+        public TransformDirectionExtractor DirectionExtractor { get; protected set; }
         #endregion
 
         /// <summary>
@@ -47,21 +54,21 @@
         /// <param name="clearOnly">Whether to only clear the existing sources and not add new ones.</param>
         public virtual void SetAxisSources(bool clearOnly = false)
         {
-            if (lateralAxis != null)
+            if (LateralAxis != null)
             {
-                lateralAxis.ClearSources();
-                if (!clearOnly && facade.LateralAxis != null)
+                LateralAxis.ClearSources();
+                if (!clearOnly && Facade.LateralAxis != null)
                 {
-                    lateralAxis.AddSource(facade.LateralAxis);
+                    LateralAxis.AddSource(Facade.LateralAxis);
                 }
             }
 
-            if (longitudinalAxis != null)
+            if (LongitudinalAxis != null)
             {
-                longitudinalAxis.ClearSources();
-                if (!clearOnly && facade.LongitudinalAxis != null)
+                LongitudinalAxis.ClearSources();
+                if (!clearOnly && Facade.LongitudinalAxis != null)
                 {
-                    longitudinalAxis.AddSource(facade.LongitudinalAxis);
+                    LongitudinalAxis.AddSource(Facade.LongitudinalAxis);
                 }
             }
         }
@@ -71,7 +78,7 @@
         /// </summary>
         public virtual void SetMutator()
         {
-            rotationMutator.Target = facade.Target;
+            RotationMutator.Target = Facade.Target;
         }
 
         /// <summary>
@@ -79,7 +86,7 @@
         /// </summary>
         public virtual void SetExtractor()
         {
-            directionExtractor.source = facade.DirectionOffset;
+            DirectionExtractor.Source = Facade.DirectionOffset;
         }
 
         protected virtual void OnEnable()
